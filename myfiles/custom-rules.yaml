@@ -1,0 +1,49 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/component: alert-router
+    app.kubernetes.io/instance: main
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: kube-prometheus
+    app.kubernetes.io/version: 0.24.0
+    prometheus: k8s
+    role: alert-rules
+  name: custom-rule
+  namespace: monitoring
+spec:
+  groups:
+  - name: custom.rules
+    rules:
+    - alert: HighMemoryLoad
+      annotations:
+        description: Memory usage is over 50%
+      expr: 100 * (1 - (avg_over_time(node_memory_MemFree_bytes[1m])
+                       + avg_over_time(node_memory_Cached_bytes[1m])
+                       + avg_over_time(node_memory_Buffers_bytes[1m]))
+                  / avg_over_time(node_memory_MemTotal_bytes[1m])) > 50
+
+      for: 2m
+      labels:
+        severity: custom
+        namespace: monitoring
+
+    - alert: HighMemoryRequests
+      annotations:
+        description: Memory requests is over 50%
+      expr: 100*(sum(kube_pod_container_resource_requests{resource="memory", node=~"node.+"})/
+                 sum(kube_node_status_allocatable{resource="memory", node=~"node.+"})) > 50
+      for: 1m
+      labels:
+        severity: custom
+        namespace: monitoring
+
+    - alert: HighMemoryLimits
+      annotations:
+        description: Memory limits is over 50%
+      expr: 100*(sum(kube_pod_container_resource_limits{resource="memory", node=~"node.+"})/
+                 sum(kube_node_status_allocatable{resource="memory", node=~"node.+"})) > 50
+      for: 1m
+      labels:
+        severity: custom
+        namespace: monitoring
