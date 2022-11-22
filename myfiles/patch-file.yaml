@@ -1,0 +1,5 @@
+spec:
+  replicas: 2
+  alertmanagerConfigSelector:
+    matchLabels:
+      alertmanagerConfig: customConfig
